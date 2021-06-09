@@ -1,0 +1,52 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Server {
+  id        String   @id // uses the discord server id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  permissionsViewRoleId  String // This role is used by default for view commands permission check
+  permissionsEditRoleId  String // This role is used by default for self edit commands permission check
+  permissionsAdminRoleId String // This role is used by default for other edit / create commands permission check
+
+  userLogChannelId    String? // Channel Id for userLog notifications
+  userLogOnUserEvents Boolean @default(false) // Show notification on user events (like Join,Left,Kick,Ban,NameChange)
+
+  //Polls Poll[]
+}
+
+// model Poll {
+//   id          Int          @id @default(autoincrement())
+//   Server      Server       @relation(fields: [serverId], references: [id])
+//   serverId    String
+//   type        String // Currently "poll" or "event"
+//   channelId   String // Id of the channel the poll was created in
+//   text        String // Description of the event
+//   createdAt   DateTime     @default(now())
+//   endedAt     DateTime // Determins until when the poll is accepting votes
+//   messageId   String? // Required to cache the message after the bot was restarted
+//   PollChoices PollChoice[]
+// }
+
+// model PollChoice {
+//   id            Int        @id @default(autoincrement())
+//   Poll          Poll       @relation(fields: [pollId], references: [id])
+//   pollId        Int
+//   reactionEmoji String
+//   text          String
+//   PollVotes     PollVote[]
+// }
+
+// model PollVote {
+//   id           Int        @id @default(autoincrement())
+//   PollChoice   PollChoice @relation(fields: [pollChoiceId], references: [id])
+//   pollChoiceId Int
+//   userId       String
+// }
