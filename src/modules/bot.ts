@@ -1,4 +1,3 @@
-import { Server } from "@prisma/client"
 import { Client, Message } from "discord.js"
 import _ from "lodash"
 import { BaseLogger } from "pino"

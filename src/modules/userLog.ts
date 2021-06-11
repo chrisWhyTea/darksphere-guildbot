@@ -18,7 +18,7 @@ export class UserLogModule extends Module {
             if (!server.userLogOnUserEvents || _.isNil(server.userLogChannelId)) {
                 return
             }
-            const text = `:green_circle: <@${member.id}> hat den server **betreten**.`
+            const text = `:green_circle: <@${member.id}> hat den Server **betreten**.`
             await this.sendNotificationToUserLog(text, server);
         } catch (e) {
             this.logger.error(e)
@@ -33,7 +33,7 @@ export class UserLogModule extends Module {
             if (!server.userLogOnUserEvents) {
                 return
             }
-            const text = `:red_circle: <@${member.id}> hat den server **verlassen** oder wurde vom server **gekickt**.`
+            const text = `:red_circle: <@${member.id}> hat den Server **verlassen** oder wurde vom Server **gekickt**.`
             await this.sendNotificationToUserLog(text, server);
         } catch (e) {
             this.logger.error(e)
