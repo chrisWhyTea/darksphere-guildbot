@@ -75,6 +75,16 @@ export abstract class Module {
     }
 
 
+    async checkIfRoleBelongsToServer(roleId: string, serverId: string) {
+        
+        const fetechedRole: any = (await (await this.client.guilds.fetch(serverId)).roles.fetch(roleId))
+        if (_.isNil(fetechedRole)) {
+            return false
+        }
+        console.log(fetechedRole)
+        return true
+    }
+
     async checkPermissions(server: Server, member: GuildMember, type: "admin" | "edit" | "view") {
         const roleCache = (await member.fetch()).roles.cache.toJSON()
         const roleIds = _.map(roleCache, (o: any) => {

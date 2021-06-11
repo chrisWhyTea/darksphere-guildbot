@@ -3,6 +3,7 @@ import { Channel, Client, GuildMember, Message, PartialDMChannel, PartialGuildMe
 import dotenv from 'dotenv'
 import _ from 'lodash'
 import pino from 'pino'
+import { BotModule } from './modules/bot'
 import { Module } from './modules/module'
 import { PollModule } from './modules/poll'
 import { UserLogModule } from './modules/userLog'
@@ -25,7 +26,8 @@ async function main() {
 
         const modules: Module[] = [
             new PollModule(client, logger),
-            new UserLogModule(client, logger)
+            new UserLogModule(client, logger),
+            new BotModule(client,logger)
         ]
 
         logger.info({ modules: modules.length }, "bot is ready")
@@ -38,8 +40,10 @@ async function main() {
                     return
                 }
                 await message.delete()
-                const commandArray = message.content.substr(1).split(" ")
+                const commandArraySource = message.content.substr(1).split(" ")
                 for await (const module of modules) {
+                    let commandArray: string[] = []
+                    Object.assign(commandArray, commandArraySource)
                     module.commandHandler(message, commandArray)
                 }
             }
