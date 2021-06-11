@@ -104,7 +104,7 @@ export class UserLogModule extends Module {
                             }
                         })
                         const text = `:yellow_square: <@${message.member.id}> hat den UserLog Channel auf <#${channelId}> gesetzt.`
-                        await this.sendNotificationToUserLog(text, serverUpdated);
+                        await this.sendBotLogNotification(text, serverUpdated, message)
                     } else {
                         await (await message.author.createDM()).send(commandErrorUnknownChannelString)
                         return
@@ -115,30 +115,32 @@ export class UserLogModule extends Module {
                         await (await message.author.createDM()).send(commandErrorUserlogNoChannelIdSet)
                         return
                     }
-                    await this.prisma.server.update({
+                    const updatedServer = await this.prisma.server.update({
                         where: { id: server.id },
                         data: {
                             userLogOnUserEvents: !server.userLogOnUserEvents
                         }
                     })
-                    if (server.userLogOnUserEvents) {
-                        const text = `:red_square: <@${message.member.id}> hat den UserLog **deaktiviert**.`
-                        await this.sendNotificationToUserLog(text, server);
-
+                    let text
+                    if (updatedServer.userLogOnUserEvents === true) {
+                        text = `:green_square: <@${message.member.id}> hat den UserLog **aktiviert**.`
                     } else {
-                        const text = `:green_square: <@${message.member.id}> hat den UserLog **aktiviert**.`
-                        await this.sendNotificationToUserLog(text, server);
+                        text = `:red_square: <@${message.member.id}> hat den UserLog **deaktiviert**.`
                     }
+                    await this.sendBotLogNotification(text, server, message)
 
                 } else if (action.toLowerCase() === "status") {
-                    var channelText
-                    var statusText
-                    var status = statusOffString
-                    var additionalText = ""
-                    const aktivText = `**${aktivString}:**          ${status}`
-                    if (server.userLogOnUserEvents) {
+                    let channelText: string
+                    let statusText: string
+                    let status: string
+                    let additionalText = ""
+                    
+                    if (server.userLogOnUserEvents === true) {
                         status = statusOnString
+                    } else {
+                        status = statusOffString
                     }
+                    const aktivText = `**${aktivString}:**          ${status}`
                     if (!_.isNil(server.userLogChannelId)) {
                         channelText = `**${channelString}:**     <#${server.userLogChannelId}>`
                         statusText = `**${userLogStatusHeaderString}**\n\n${aktivText}\n${channelText}`
@@ -147,7 +149,7 @@ export class UserLogModule extends Module {
                         additionalText = statusNoChannelSetString
                     }
                     statusText = `**${userLogStatusHeaderString}**\n\n${aktivText}\n${channelText}${additionalText}`
-                    await (await message.author.createDM()).send(statusText)
+                    await this.sendBotLogNotification(statusText, server, message)
 
                 }
             } else {

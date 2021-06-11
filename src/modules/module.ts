@@ -60,6 +60,43 @@ export abstract class Module {
 
     }
 
+    async sendBotLogNotification(text: string, server: Server, message: Message) {
+        if (server.botLogActive) {
+            await this.sendMessageToBotLogChannel(text, server)
+        } else {
+            await (await message.author.createDM()).send(text)
+        }
+    }
+
+    async sendMessageToBotLogChannel(text: string, server: Server) {
+        if (_.isNil(server.botLogChannelId)) {
+            return
+        }
+        if (server.botLogActive === false) {
+            return
+        }
+        try {
+            const botLogChannel = await this.client.channels.fetch(server.botLogChannelId);
+            if (botLogChannel.isText()) {
+                await botLogChannel.send(text);
+            }
+        } catch (e) {
+            if (e instanceof DiscordAPIError && e.message === "Unknown Channel") {
+                this.logger.info({ server: server.id, channel: server.botLogChannelId }, "BotLog channel was not found")
+                const serverOwner = (await this.client.guilds.fetch(server.id)).owner
+
+                if (_.isNil(serverOwner)) {
+                    return
+                }
+                await serverOwner.send(text)
+                await serverOwner.send(":exclamation: Der BotLog Channel ist für den Bot nichtmehr sichtbar da dem Bot entweder die Rechte genommen wurden oder der Channel gelöscht wurde. \n\nUm diese Nachricht an dich (den Serverbesitzer) zu verhindern, setze einen Channel mit `/bot log setChannel CHANNEL_ID` der vom Bot einsehbar ist. \nAndernfalls verwende `/bot log toggle` um den BotLog auszuschalten.")
+                return
+            }
+            throw e
+        }
+
+    }
+
     async checkIfChannelBelongsToServer(channelId: string, serverId: string) {
         try {
             const fetechedChannel: any = (await this.client.channels.fetch(channelId)).toJSON()
@@ -76,7 +113,7 @@ export abstract class Module {
 
 
     async checkIfRoleBelongsToServer(roleId: string, serverId: string) {
-        
+
         const fetechedRole: any = (await (await this.client.guilds.fetch(serverId)).roles.fetch(roleId))
         if (_.isNil(fetechedRole)) {
             return false

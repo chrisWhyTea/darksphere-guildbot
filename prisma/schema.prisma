@@ -19,6 +19,9 @@ model Server {
   userLogChannelId    String? // Channel Id for userLog notifications
   userLogOnUserEvents Boolean @default(false) // Show notification on user events (like Join,Left,Kick,Ban,NameChange)
 
+  botLogChannelId String? // Channel Id for botLog notifications
+  botLogActive    Boolean @default(false) // Show notification on bot commands
+
   //Polls Poll[]
 }
 
