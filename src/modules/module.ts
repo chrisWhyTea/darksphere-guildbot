@@ -81,7 +81,6 @@ export abstract class Module {
         if (_.isNil(fetechedRole)) {
             return false
         }
-        console.log(fetechedRole)
         return true
     }
 
