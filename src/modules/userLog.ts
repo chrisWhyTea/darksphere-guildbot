@@ -18,7 +18,9 @@ export class UserLogModule extends Module {
             if (!server.userLogOnUserEvents || _.isNil(server.userLogChannelId)) {
                 return
             }
-            const text = `:green_circle: <@${member.id}> hat den Server **betreten**.`
+            let usernameString = this.getUsernameString(member);
+
+            const text = `:green_circle: <@${member.id}> ${usernameString} hat den Server **betreten**.`
             await this.sendNotificationToUserLog(text, server);
         } catch (e) {
             this.logger.error(e)
@@ -33,12 +35,27 @@ export class UserLogModule extends Module {
             if (!server.userLogOnUserEvents) {
                 return
             }
-            const text = `:red_circle: <@${member.id}> hat den Server **verlassen** oder wurde vom Server **gekickt**.`
+
+            let usernameString = this.getUsernameString(member);
+
+            const text = `:red_circle: <@${member.id}> ${usernameString} hat den Server **verlassen** oder wurde vom Server **gekickt**.`
             await this.sendNotificationToUserLog(text, server);
         } catch (e) {
             this.logger.error(e)
         }
         return
+    }
+
+    private getUsernameString(member: GuildMember | PartialGuildMember) {
+        let usernameString = "";
+        if (!_.isNil(member.user)) {
+            let nicknameAddition = "";
+            if (!_.isNil(member.nickname)) {
+                nicknameAddition = ` aka **${member.nickname}**`;
+            }
+            usernameString = `[**${member.user.username}**${nicknameAddition}]`;
+        }
+        return usernameString;
     }
 
     async memberUpdateHandler(oldMember: GuildMember | PartialGuildMember, newMember: GuildMember) {
