@@ -151,7 +151,7 @@ export class UserLogModule extends Module {
                     let statusText: string
                     let status: string
                     let additionalText = ""
-                    
+
                     if (server.userLogOnUserEvents === true) {
                         status = statusOnString
                     } else {
@@ -188,7 +188,7 @@ export class UserLogModule extends Module {
             }
         } catch (e) {
             if (e instanceof DiscordAPIError && e.message === "Unknown Channel") {
-                this.logger.info({server: server.id, channel: server.userLogChannelId},"UserLog channel was not found")
+                this.logger.info({ server: server.id, channel: server.userLogChannelId }, "UserLog channel was not found")
                 const serverOwner = (await this.client.guilds.fetch(server.id)).owner
 
                 if (_.isNil(serverOwner)) {

@@ -27,7 +27,7 @@ async function main() {
         const modules: Module[] = [
             new PollModule(client, logger),
             new UserLogModule(client, logger),
-            new BotModule(client,logger)
+            new BotModule(client, logger)
         ]
 
         logger.info({ modules: modules.length }, "bot is ready")

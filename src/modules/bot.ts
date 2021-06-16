@@ -137,7 +137,7 @@ export class BotModule extends Module {
                         statusText = `**${botLogStatusHeaderString}**\n\n${aktivText}\n${channelText}${additionalText}`
                         await this.sendBotLogNotification(statusText, server, message)
 
-                    }else{
+                    } else {
                         await (await message.author.createDM()).send(commandHelpBotLogGeneralString)
                     }
                 }
