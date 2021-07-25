@@ -35,8 +35,7 @@ async function main() {
             // Only handle command messages
             if (message.content.startsWith(process.env.COMMAND_PREFIX || "/")) {
                 if (message.channel.type === "dm") {
-                    client.guilds.fetch
-                    message.reply(":exclamation: Bitte benutze den Befehl in einem Text Channel des Discord Server auf dem der Bot etwas machen soll.")
+                    //message.reply(":exclamation: Bitte benutze den Befehl in einem Text Channel des Discord Server auf dem der Bot etwas machen soll.")
                     return
                 }
                 await message.delete()

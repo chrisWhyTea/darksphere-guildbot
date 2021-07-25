@@ -20,7 +20,7 @@ export class UserLogModule extends Module {
             }
             let usernameString = this.getUsernameString(member);
 
-            const text = `:green_circle: <@${member.id}> ${usernameString} hat den Server **betreten**.`
+            const text = `:green_circle: <@${member.id}> ${usernameString} ${this.lng.get("USERLOG_USER_JOINED", server.language)}`
             await this.sendNotificationToUserLog(text, server);
         } catch (e) {
             this.logger.error(e)
@@ -29,7 +29,7 @@ export class UserLogModule extends Module {
     }
 
     async memberRemoveHandler(member: GuildMember | PartialGuildMember): Promise<void> {
-        this.logger.info({ memberId: member.id, guildId: member.guild.id }, "member joined")
+        this.logger.info({ memberId: member.id, guildId: member.guild.id }, "member left the server")
         try {
             const server = await this.getServerById(member.guild.id)
             if (!server.userLogOnUserEvents) {
@@ -38,7 +38,7 @@ export class UserLogModule extends Module {
 
             let usernameString = this.getUsernameString(member);
 
-            const text = `:red_circle: <@${member.id}> ${usernameString} hat den Server **verlassen** oder wurde vom Server **gekickt**.`
+            const text = `:red_circle: <@${member.id}> ${usernameString} ${this.lng.get("USERLOG_USER_LEFT", server.language)}`
             await this.sendNotificationToUserLog(text, server);
         } catch (e) {
             this.logger.error(e)
@@ -68,7 +68,7 @@ export class UserLogModule extends Module {
                 if (oldMember.nickname !== newMember.nickname) {
                     const oldMemberName = oldMember.nickname || oldMember.displayName
                     const newMemberName = newMember.nickname || newMember.displayName
-                    const text = `:yellow_circle: <@${newMember.id}> Nickname wurde geändert von **${oldMemberName}** zu **${newMemberName}**.`
+                    const text = `:yellow_circle: <@${newMember.id}> ${this.lng.get("USERLOG_USER_NICKNAME_CHANGED_1", server.language)} **${oldMemberName}** ${this.lng.get("USERLOG_USER_NICKNAME_CHANGED_2", server.language)} **${newMemberName}**.`
                     await this.sendNotificationToUserLog(text, server);
                 }
             } catch (e) {
@@ -98,11 +98,11 @@ export class UserLogModule extends Module {
             }
             const server = await this.getServerById(message.member.guild.id)
             if (!await this.checkPermissions(server, message.member, "admin")) {
-                await (await message.author.createDM()).send(noPermissionString)
+                await (await message.author.createDM()).send(":no_entry_sign:" + this.lng.get("NO_PERMISSION", server.language))
                 return
             }
             if (commandArray.length === 0) {
-                await (await message.author.createDM()).send(commandHelpUserlogGeneralString)
+                await (await message.author.createDM()).send(this.createHelpText(server.language))
                 return
             }
             const action = commandArray.shift()
@@ -110,7 +110,7 @@ export class UserLogModule extends Module {
                 if (action.toLowerCase() === "setchannel") {
                     const channelId = commandArray.shift()
                     if (isNil(channelId)) {
-                        await (await message.author.createDM()).send(commandHelpUserlogSetChannelString)
+                        await (await message.author.createDM()).send(this.createHelpText(server.language))
                         return
                     }
                     if (await this.checkIfChannelBelongsToServer(channelId, server.id)) {
@@ -120,16 +120,16 @@ export class UserLogModule extends Module {
                                 userLogChannelId: channelId
                             }
                         })
-                        const text = `:yellow_square: <@${message.member.id}> hat den UserLog Channel auf <#${channelId}> gesetzt.`
+                        const text = `:yellow_square: <@${message.member.id}> ${this.lng.get("USERLOG_NOTIFICATION_CHANNEL_CHANGED_1", server.language)} <#${channelId}> ${this.lng.get("USERLOG_NOTIFICATION_CHANNEL_CHANGED_2", server.language)}`
                         await this.sendBotLogNotification(text, serverUpdated, message)
                     } else {
-                        await (await message.author.createDM()).send(commandErrorUnknownChannelString)
+                        await (await message.author.createDM()).send(this.lng.get("USERLOG_NO_CHANNEL_FOUND", server.language))
                         return
                     }
 
                 } else if (action.toLowerCase() === "toggle") {
                     if (_.isNil(server.userLogChannelId)) {
-                        await (await message.author.createDM()).send(commandErrorUserlogNoChannelIdSet)
+                        await (await message.author.createDM()).send(this.lng.get("USERLOG_NO_CHANNEL_SET", server.language))
                         return
                     }
                     const updatedServer = await this.prisma.server.update({
@@ -140,9 +140,9 @@ export class UserLogModule extends Module {
                     })
                     let text
                     if (updatedServer.userLogOnUserEvents === true) {
-                        text = `:green_square: <@${message.member.id}> hat den UserLog **aktiviert**.`
+                        text = `:green_square: <@${message.member.id}> ${this.lng.get("USERLOG_ACTIVATED", server.language)}`
                     } else {
-                        text = `:red_square: <@${message.member.id}> hat den UserLog **deaktiviert**.`
+                        text = `:red_square: <@${message.member.id}> ${this.lng.get("USERLOG_DEACTIVATED", server.language)}`
                     }
                     await this.sendBotLogNotification(text, server, message)
 
@@ -153,24 +153,24 @@ export class UserLogModule extends Module {
                     let additionalText = ""
 
                     if (server.userLogOnUserEvents === true) {
-                        status = statusOnString
+                            status = ":green_square: " + this.lng.get("STATE_ON", server.language)
+                        } else {
+                            status = ":red_square: " + this.lng.get("STATE_OFF", server.language)
+                        }
+                    const aktivText = `**${this.lng.get("STATE", server.language)}:**        ${status}`
+                    if (!_.isNil(server.botLogChannelId)) {
+                        channelText = `**${this.lng.get("CHANNEL", server.language)}:**     <#${server.botLogChannelId}>`
+                        statusText = `**${this.lng.get("USERLOG_STATUS_HEADER", server.language)}**\n\n${aktivText}\n${channelText}`
                     } else {
-                        status = statusOffString
+                        channelText = `**${this.lng.get("CHANNEL", server.language)}:**     ${this.lng.get("NO_CHANNEL_SELECTED", server.language)}`
+                        additionalText = "\n\n:exclamation:" + this.lng.get("USERLOG_NO_CHANNEL_SET", server.language)
                     }
-                    const aktivText = `**${aktivString}:**          ${status}`
-                    if (!_.isNil(server.userLogChannelId)) {
-                        channelText = `**${channelString}:**     <#${server.userLogChannelId}>`
-                        statusText = `**${userLogStatusHeaderString}**\n\n${aktivText}\n${channelText}`
-                    } else {
-                        channelText = `**${channelString}:**     ${noChannelString}`
-                        additionalText = statusNoChannelSetString
-                    }
-                    statusText = `**${userLogStatusHeaderString}**\n\n${aktivText}\n${channelText}${additionalText}`
+                    statusText = `**${this.lng.get("USERLOG_STATUS_HEADER", server.language)}**\n\n${aktivText}\n${channelText}${additionalText}`
                     await this.sendBotLogNotification(statusText, server, message)
 
                 }
             } else {
-                await (await message.author.createDM()).send(unknownCommandString + "\n\n" + commandHelpUserlogGeneralString)
+                await (await message.author.createDM()).send(this.createHelpText(server.language))
                 return
             }
         }
@@ -195,7 +195,7 @@ export class UserLogModule extends Module {
                     return
                 }
                 await serverOwner.send(text)
-                await serverOwner.send(":exclamation: Der UserLog Channel ist für den Bot nichtmehr sichtbar da dem Bot entweder die Rechte genommen wurden oder der Channel gelöscht wurde. \n\nUm diese Nachricht an dich (den Serverbesitzer) zu verhindern, setze einen Channel mit `/userlog setChannel CHANNEL_ID` der vom Bot einsehbar ist. \nAndernfalls verwende `/userlog toggle` um den UserLog auszuschalten.")
+                await serverOwner.send(`:exclamation: ${this.lng.get("USERLOG_CHANNEL_NOT_AVAILABLE_ANYMORE", server.language)}`)
                 return
             }
             throw e
@@ -203,24 +203,16 @@ export class UserLogModule extends Module {
 
     }
 
+    private createHelpText(language: string) {
+        const botCommandsHelp = this.lng.get("HELP_USERLOG_COMMANDS", language)
+        const commands = `
+
+
+\`/userlog setChannel CHANNEL_ID\` ${this.lng.get("HELP_USERLOG_LOG_SET_CHANNEL", language)}
+\`/userlog status\` ${this.lng.get("HELP_USERLOG_LOG_STATUS", language)}
+\`/userlog toggle\` ${this.lng.get("HELP_USERLOG_TOGGLE", language)}
+ `
+        return botCommandsHelp + commands
+    }
 
 }
-const noPermissionString = ":no_entry_sign: Du hast keine Berechtigung um diesen Befehl zu nutzen."
-const unknownCommandString = ":grey_question: Unbekannter Befehl"
-
-const commandHelpUserlogSetChannelString = "`/userlog setChannel CHANNEL_ID` setzt den UserLog Benachrichtigungs Channel, der Channel muss für den Bot sichtbar sein."
-const commandHelpUserlogToggleString = "`/userlog toggle` Schaltet die UserLog Benachrichtigungen an oder aus"
-const commandHelpUserlogStatusString = "`/userlog status` Gibt den Status des UserLogs zurück"
-const commandHelpUserlogGeneralString = "**UserLog Befehle** \n\n" + commandHelpUserlogSetChannelString + "\n" + commandHelpUserlogToggleString + "\n" + commandHelpUserlogStatusString
-const commandErrorUnknownChannelString = ":x: Der Channel auf dem Discord Server konnte nicht gefunden werden, bitte versuche es erneut mit der Channel Id eines Channels der für den Bot sichtbar ist."
-const commandErrorUserlogNoChannelIdSet = ":x: Es wurde kein UserLog Channel gesetzt. Um den UserLog zu aktivieren muss mit `/userlog setChannel CHANNEL_ID` ein Channel gesetzt werden."
-const commandSuccessUserlogSetChannelString = ":white_check_mark: Userlog Channel erfolgreich gesetzt."
-const commandSuccessUserlogToggleOnString = ":white_check_mark: Userlog angeschaltet."
-const commandSuccessUserlogToggleOffString = ":white_check_mark: Userlog ausgeschaltet."
-const statusNoChannelSetString = "\n\n:exclamation: Es wurde kein UserLog Channel gesetzt. Um den UserLog zu aktivieren muss mit `/userlog setChannel CHANNEL_ID` ein Channel gesetzt werden."
-const statusOnString = "An :green_square:"
-const statusOffString = "Aus :red_square:"
-const aktivString = "Aktiv"
-const noChannelString = "Kein Channel ausgewählt"
-const userLogStatusHeaderString = "UserLog Status"
-const channelString = "Channel"

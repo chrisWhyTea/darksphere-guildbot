@@ -3,15 +3,18 @@ import { Channel, Client, DiscordAPIError, GuildMember, Message, PartialDMChanne
 import _ from "lodash";
 import { BaseLogger } from 'pino';
 import { prisma } from "../db";
+import { Language } from "../language";
 
 export abstract class Module {
     client: Client
     logger: BaseLogger
     prisma: PrismaClient
+    lng: Language;
     constructor(client: Client, logger: BaseLogger) {
         this.client = client
         this.logger = logger
         this.prisma = prisma()
+        this.lng = new Language()
     }
 
     async getServerById(serverId: string): Promise<Server> {
@@ -89,7 +92,7 @@ export abstract class Module {
                     return
                 }
                 await serverOwner.send(text)
-                await serverOwner.send(":exclamation: Der BotLog Channel ist für den Bot nichtmehr sichtbar da dem Bot entweder die Rechte genommen wurden oder der Channel gelöscht wurde. \n\nUm diese Nachricht an dich (den Serverbesitzer) zu verhindern, setze einen Channel mit `/bot log setChannel CHANNEL_ID` der vom Bot einsehbar ist. \nAndernfalls verwende `/bot log toggle` um den BotLog auszuschalten.")
+                await serverOwner.send(`:exclamation: ${this.lng.get("BOTLOG_CHANNEL_NOT_AVAILABLE_ANYMORE", server.language)}`)
                 return
             }
             throw e

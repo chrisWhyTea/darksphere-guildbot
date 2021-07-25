@@ -22,6 +22,8 @@ model Server {
   botLogChannelId String? // Channel Id for botLog notifications
   botLogActive    Boolean @default(false) // Show notification on bot commands
 
+  language String @default("en")
+
   //Polls Poll[]
 }
 

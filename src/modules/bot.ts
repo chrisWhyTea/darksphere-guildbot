@@ -21,20 +21,20 @@ export class BotModule extends Module {
             }
             const server = await this.getServerById(message.member.guild.id)
             if (!await this.checkPermissions(server, message.member, "admin")) {
-                await (await message.author.createDM()).send(noPermissionString)
+                await (await message.author.createDM()).send(":no_entry_sign:" + this.lng.get("NO_PERMISSION", server.language))
                 return
             }
             if (commandArray.length === 0) {
-                await (await message.author.createDM()).send(commandHelpBotGeneralString)
+                await (await message.author.createDM()).send(this.createHelpText(server.language))
                 return
             }
             const action = commandArray.shift()
-            if (!_.isNil(action) && ["permissions", "setpermissions", "restart", "log"].includes(action.toLowerCase())) {
+            if (!_.isNil(action) && ["permissions", "setpermissions", "restart", "log", "setlanguage"].includes(action.toLowerCase())) {
                 if (action.toLowerCase() === "setpermissions") {
                     const permissionType = commandArray.shift()
                     const roleId = commandArray.shift()
                     if (_.isNil(permissionType) || !["admin", "edit", "view"].includes(permissionType.toLowerCase()) || _.isNil(roleId)) {
-                        await (await message.author.createDM()).send(commandHelpBotSetPermissionsString)
+                        await (await message.author.createDM()).send(this.createHelpText(server.language))
                         return
                     }
 
@@ -53,24 +53,24 @@ export class BotModule extends Module {
                             data: data
                         })
                         const fetechedRole: any = (await (await this.client.guilds.fetch(server.id)).roles.fetch(roleId))
-                        const text = `:white_check_mark: <@${message.member.id}> hat '${permissionType}' Botrechte der Rolle '${fetechedRole.name}' gegeben.`
+                        const text = `:white_check_mark: <@${message.member.id}> ${this.lng.get("BOT_ROLE_SET_1", server.language)} '${permissionType}' ${this.lng.get("BOT_ROLE_SET_2", server.language)} '${fetechedRole.name}' ${this.lng.get("BOT_ROLE_SET_3", server.language)}`
                         await this.sendBotLogNotification(text, server, message)
                     } else {
-                        await (await message.author.createDM()).send(commandErrorUnknownRoleString)
+                        await (await message.author.createDM()).send(":x: " + this.lng.get("UNKNOWN_ROLE_ERROR", server.language))
                         return
                     }
                 }
                 else if (action.toLowerCase() === "restart") {
-                    const text = `:recycle: <@${message.member.id}> hat den Bot **neugestartet.**`
+                    const text = `:recycle: <@${message.member.id}> ${this.lng.get("BOT_RESTART", server.language)}`
                     await this.sendBotLogNotification(text, server, message)
                     process.exit(0)
                 }
-                if (action.toLowerCase() === "log") {
+                else if (action.toLowerCase() === "log") {
                     const logAction = commandArray.shift()
                     if (!_.isNil(logAction) && logAction.toLowerCase() === "setchannel") {
                         const channelId = commandArray.shift()
                         if (_.isNil(channelId)) {
-                            await (await message.author.createDM()).send(commandHelpBotLogSetChannelString)
+                            await (await message.author.createDM()).send(this.createHelpText(server.language))
                             return
                         }
                         if (await this.checkIfChannelBelongsToServer(channelId, server.id)) {
@@ -80,16 +80,16 @@ export class BotModule extends Module {
                                     botLogChannelId: channelId
                                 }
                             })
-                            const text = `:yellow_square: <@${message.member.id}> hat den BotLog Channel auf <#${channelId}> gesetzt.`
+                            const text = `:yellow_square: <@${message.member.id}> ${this.lng.get("BOTLOG_NOTIFICATION_CHANNEL_CHANGED_1", server.language)} <#${channelId}> ${this.lng.get("BOTLOG_NOTIFICATION_CHANNEL_CHANGED_2", server.language)}`
                             await this.sendBotLogNotification(text, updatedServer, message)
                         } else {
-                            await (await message.author.createDM()).send(commandErrorUnknownChannelString)
+                            await (await message.author.createDM()).send(":x: " + this.lng.get("BOTLOG_NO_CHANNEL_FOUND", server.language))
                             return
                         }
 
                     } else if (!_.isNil(logAction) && logAction.toLowerCase() === "toggle") {
                         if (_.isNil(server.botLogChannelId)) {
-                            await (await message.author.createDM()).send(commandErrorBotLogNoChannelIdSet)
+                            await (await message.author.createDM()).send(":x: " + this.lng.get("BOTLOG_NO_CHANNEL_SET", server.language))
                             return
                         }
                         const updatedServer = await this.prisma.server.update({
@@ -100,10 +100,10 @@ export class BotModule extends Module {
                         })
                         let text
                         if (updatedServer.botLogActive === true) {
-                            text = `:green_square: <@${message.member.id}> hat den BotLog **aktiviert**.`
+                            text = `:green_square: <@${message.member.id}> ${this.lng.get("BOTLOG_ACTIVATED", server.language)}`
 
                         } else {
-                            text = `:red_square: <@${message.member.id}> hat den BotLog **deaktiviert**.`
+                            text = `:red_square: <@${message.member.id}> ${this.lng.get("BOTLOG_DEACTIVATED", server.language)}`
 
 
                         }
@@ -122,56 +122,66 @@ export class BotModule extends Module {
                         var additionalText = ""
 
                         if (server.botLogActive) {
-                            status = statusOnString
+                            status = ":green_square: " + this.lng.get("STATE_ON", server.language)
                         } else {
-                            status = statusOffString
+                            status = ":red_square: " + this.lng.get("STATE_OFF", server.language)
                         }
-                        const aktivText = `**${aktivString}:**          ${status}`
+                        const aktivText = `**${this.lng.get("STATE", server.language)}:**        ${status}`
                         if (!_.isNil(server.botLogChannelId)) {
-                            channelText = `**${channelString}:**     <#${server.botLogChannelId}>`
-                            statusText = `**${botLogStatusHeaderString}**\n\n${aktivText}\n${channelText}`
+                            channelText = `**${this.lng.get("CHANNEL", server.language)}:**     <#${server.botLogChannelId}>`
+                            statusText = `**${this.lng.get("BOTLOG_STATUS_HEADER", server.language)}**\n\n${aktivText}\n${channelText}`
                         } else {
-                            channelText = `**${channelString}:**     ${noChannelString}`
-                            additionalText = statusNoChannelSetString
+                            channelText = `**${this.lng.get("CHANNEL", server.language)}:**     ${this.lng.get("NO_CHANNEL_SELECTED", server.language)}`
+                            additionalText = "\n\n:exclamation:" + this.lng.get("BOTLOG_NO_CHANNEL_SET", server.language)
                         }
-                        statusText = `**${botLogStatusHeaderString}**\n\n${aktivText}\n${channelText}${additionalText}`
+                        statusText = `**${this.lng.get("BOTLOG_STATUS_HEADER", server.language)}**\n\n${aktivText}\n${channelText}${additionalText}`
                         await this.sendBotLogNotification(statusText, server, message)
 
                     } else {
-                        await (await message.author.createDM()).send(commandHelpBotLogGeneralString)
+                        await (await message.author.createDM()).send(this.createHelpText(server.language))
+                    }
+                }
+                else if (action.toLowerCase() === "setlanguage") {
+                    const language = commandArray.shift()
+                    if (_.isNil(language)) {
+                        await (await message.author.createDM()).send(this.createHelpText(server.language))
+                        return
+                    }
+                    if (["de", "en"].includes(language)) {
+                        const updatedServer = await this.prisma.server.update({
+                            where: { id: server.id },
+                            data: {
+                                language: language
+                            }
+                        })
+                        const text = `:yellow_square: <@${message.member.id}> ${this.lng.get("BOT_LANGUAGE_CHANGED_1", server.language)} '${language}' ${this.lng.get("BOT_LANGUAGE_CHANGED_2", server.language)}`
+                        await this.sendBotLogNotification(text, updatedServer, message)
+                    } else {
+                        await (await message.author.createDM()).send(":x: " + this.lng.get("BOT_SET_LANGUAGE_NOT_SUPPORTED", server.language))
+                        return
                     }
                 }
             } else {
-                await (await message.author.createDM()).send(commandHelpBotGeneralString)
+                await (await message.author.createDM()).send(this.createHelpText(server.language))
                 return
             }
         }
 
     }
+
+    private createHelpText(language: string) {
+        const botCommandsHelp = this.lng.get("HELP_BOT_COMMANDS", language)
+        const commands = `
+
+\`/bot restart\` ${this.lng.get("HELP_BOT_RESTART", language)}
+\`/bot log setChannel CHANNEL_ID\` ${this.lng.get("HELP_BOT_LOG_SET_CHANNEL", language)}
+\`/bot log status\` ${this.lng.get("HELP_BOT_LOG_STATUS", language)}
+\`/bot log toggle\` ${this.lng.get("HELP_BOT_TOGGLE", language)}
+\`/bot setPermissions admin ROLE_ID\` ${this.lng.get("HELP_BOT_SET_ADMIN_PERMISSIONS", language)}
+\`/bot setPermissions edit ROLE_ID\` ${this.lng.get("HELP_BOT_SET_EDIT_PERMISSIONS", language)}
+\`/bot setPermissions view ROLE_ID\` ${this.lng.get("HELP_BOT_SET_VIEW_PERMISSIONS", language)}
+\`/bot setLanguage de|en\` ${this.lng.get("HELP_BOT_SET_LANGUAGE", language)}
+ `
+        return botCommandsHelp + commands
+    }
 }
-
-const noPermissionString = ":no_entry_sign: Du hast keine Berechtigung um diesen Befehl zu nutzen."
-const unknownCommandString = ":grey_question: Unbekannter Befehl"
-const commandHelpBotRestartString = "`/bot restart` startet den Bot neu"
-const commandHelpBotPermissionsString = "`/bot permissions` zeigt die permissions an"
-const commandHelpBotLogSetChannelString = "`/bot log setChannel CHANNEL_ID` setzt den BotLog Benachrichtigungs Channel, der Channel muss für den Bot sichtbar sein."
-const commandHelpBotLogStatusString = "`/bot log status` Gibt den Status des UserLogs zurück"
-const commandHelpBotLogToggleString = "`/bot log toggle` Schaltet die BotLog Benachrichtigungen an oder aus, im fall das die benachrichtigungen aus sind bekommt die person die einen command benutzt eine DM vom Bot"
-const commandHelpBotSetPermissionsString = "`/bot setPermissions admin ROLE_ID` setzt die 'admin' Botrechte für die Rolle.\n`/bot setPermissions edit ROLE_ID` setzt die 'edit' Botrechte für die Rolle.\n`/bot setPermissions view ROLE_ID` setzt die 'view' Botrechte für die Rolle."
-
-
-const commandHelpBotGeneralString = "**Bot Befehle**\nAlle Befehle benötigen 'admin' rechte.\n\n" + commandHelpBotLogSetChannelString + "\n" + commandHelpBotLogStatusString + "\n" + commandHelpBotLogToggleString + "\n" + commandHelpBotPermissionsString + "\n" + commandHelpBotSetPermissionsString + "\n" + commandHelpBotRestartString
-const commandHelpBotLogGeneralString = "**BotLog Befehle**\nAlle Befehle benötigen 'admin' rechte.\n\n" + commandHelpBotLogSetChannelString + "\n" + commandHelpBotLogStatusString + "\n" + commandHelpBotLogToggleString
-
-
-const commandErrorUnknownRoleString = ":x: Die Rolle konnte auf dem Discord Server nicht gefunden werden."
-
-const commandErrorUnknownChannelString = ":x: Der Channel auf dem Discord Server konnte nicht gefunden werden, bitte versuche es erneut mit der Channel Id eines Channels der für den Bot sichtbar ist."
-const commandErrorBotLogNoChannelIdSet = ":x: Es wurde kein BotLog Channel gesetzt. Um den BotLog zu aktivieren muss mit `/bot log setChannel CHANNEL_ID` ein Channel gesetzt werden."
-const statusOnString = "An :green_square:"
-const statusOffString = "Aus :red_square:"
-const aktivString = "Aktiv"
-const noChannelString = "Kein Channel ausgewählt"
-const botLogStatusHeaderString = "BotLog Status"
-const channelString = "Channel"
-const statusNoChannelSetString = "\n\n:exclamation: Es wurde kein BotLog Channel gesetzt. Um den BotLog zu aktivieren muss mit `/bot log setChannel CHANNEL_ID` ein Channel gesetzt werden."
